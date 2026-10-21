@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOCKED IN // OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --theme-color: #00ff41;
+            --theme-rgb: 0, 255, 65;
+            --dark-bg: #050505;
+            --panel-bg: #111;
+        }
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            overflow-x: hidden;
+            transition: background-color 0.5s ease;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #444; }
+
+        .neon-text {
+            text-shadow: 0 0 10px rgba(var(--theme-rgb), 0.5);
+            color: var(--theme-color);
+        }
+        
+        .theme-border { border-color: var(--theme-color); }
+        .theme-text { color: var(--theme-color); }
+        .theme-bg { background-color: var(--theme-color); }
+        
+        .glass-panel {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* God Mode Styles */
+        body.god-mode .god-hidden {
+            display: none !important;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        body.god-mode {
+            background-color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        body.god-mode #main-timer-container {
+            transform: scale(1.5);
+        }
+
+        /* Inputs */
+        .minimal-input {
+            background: transparent;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 0;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .minimal-input:focus {
+            border-color: var(--theme-color);
+        }
+        
+        /* Checkbox */
+        .custom-checkbox {
+            appearance: none;
+            background-color: #333;
+            margin: 0;
+            font: inherit;
+            color: var(--theme-color);
+            width: 1em;
+            height: 1em;
+            border: 1px solid white;
+            display: grid;
+            place-content: center;
+            cursor: pointer;
+        }
+        .custom-checkbox::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em var(--theme-color);
+        }
+        .custom-checkbox:checked::before {
+            transform: scale(1);
+        }
+
+        /* Settings Modal Animation */
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        .settings-panel {
+            animation: slideIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative">
+
+    <!-- AUTH BUTTON (Top Left) -->
+    <button id="auth-btn" class="absolute top-6 left-6 z-50 text-gray-500 hover:text-white transition-colors god-hidden flex items-center gap-3 group">
+        <div id="auth-icon-container" class="p-2 rounded-full border border-white/10 bg-white/5 group-hover:border-[var(--theme-color)] group-hover:text-[var(--theme-color)] transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
+        <span id="auth-status-text" class="text-xs uppercase tracking-wider font-bold">SIGN IN</span>
+    </button>
+
+    <!-- SETTINGS TOGGLE (Top Right) -->
+    <button id="settings-btn" class="absolute top-6 right-6 z-50 text-gray-500 hover:text-white transition-colors god-hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+
+    <!-- STREAK & STATS (Top Center) -->
+    <div class="absolute top-20 md:top-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-6 god-hidden">
+        <!-- Streak -->
+        <div class="flex items-center gap-2 text-gray-400" title="Daily Streak">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-text"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            <span id="streak-count" class="font-bold text-white">0</span>
+            <span class="text-xs">DAYS</span>
+        </div>
+        <!-- XP / Level -->
+        <div class="flex items-center gap-2 text-gray-400" title="Level">
+            <div class="w-24 h-2 bg-gray-800 rounded-full overflow-hidden relative">
+                <div id="xp-bar" class="h-full theme-bg transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <span class="text-xs">LVL <span id="level-count" class="text-white font-bold">1</span></span>
+        </div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div id="settings-panel" class="fixed top-0 right-0 h-full w-80 bg-[#111] border-l border-white/10 z-[60] transform translate-x-full transition-transform duration-300 p-6 shadow-2xl">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-xl font-bold tracking-widest text-white">SYSTEM CONFIG</h2>
+            <button id="close-settings-btn" class="text-gray-500 hover:text-white">✕</button>
+        </div>
+
+        <div class="space-y-8">
+            <!-- Theme Selector -->
+            <div>
+                <h3 class="text-xs text-gray-500 uppercase tracking-widest mb-4">Visual Interface</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="window.app.setTheme('green')" class="p-3 border border-green-500/30 rounded hover:bg-green-900/20 text-green-400 text-xs font-bold transition-all text-left flex items-center gap-2">
+                        <div class="w-3 h-3 bg-[#00ff41] rounded-full"></div> MATRIX
+                    </button>
+                    <button onclick="window.app.setTheme('red')" class="p-3 border border-red-500/30 rounded hover:bg-red-900/20 text-red-400 text-xs font-bold transition-all text-left flex items-center gap-2">
+                        <div class="w-3 h-3 bg-[#ff003c] rounded-full"></div> CYBER
+                    </button>
+                    <button onclick="window.app.setTheme('blue')" class="p-3 border border-cyan-500/30 rounded hover:bg-cyan-900/20 text-cyan-400 text-xs font-bold transition-all text-left flex items-center gap-2">
+                        <div class="w-3 h-3 bg-[#00f3ff] rounded-full"></div> ICE
+                    </button>
+                    <button onclick="window.app.setTheme('white')" class="p-3 border border-white/30 rounded hover:bg-white/10 text-white text-xs font-bold transition-all text-left flex items-center gap-2">
+                        <div class="w-3 h-3 bg-white rounded-full"></div> MONO
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats View -->
+            <div>
+                <h3 class="text-xs text-gray-500 uppercase tracking-widest mb-4">Career Stats</h3>
+                <div class="bg-white/5 p-4 rounded-lg space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Total XP</span>
+                        <span id="total-xp" class="text-white font-bold">0</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Tasks Crushed</span>
+                        <span id="total-tasks" class="text-white font-bold">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="settings-overlay" class="fixed inset-0 bg-black/50 z-[55] hidden backdrop-blur-sm"></div>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col items-center justify-start pt-40 relative w-full max-w-6xl mx-auto px-4 pb-12">
+        
+        <!-- Central Focus Area -->
+        <div id="main-timer-container" class="flex flex-col items-center transition-all duration-500 z-10">
+            
+            <!-- Current Task Display -->
+            <div id="current-task-display" class="mb-8 text-center min-h-[2rem]">
+                <span class="text-gray-500 text-sm tracking-widest uppercase mb-2 block">Current Objective</span>
+                <h2 id="active-task-text" class="text-2xl md:text-4xl font-bold text-white max-w-2xl transition-colors">
+                    Initialize mission...
+                </h2>
+            </div>
+
+            <!-- The Timer -->
+            <div class="relative group cursor-pointer mb-12" id="timer-block">
+                <div class="text-[6rem] md:text-[10rem] font-bold leading-none tracking-tighter tabular-nums select-none neon-text transition-all group-hover:scale-105" id="timer">
+                    25:00
+                </div>
+                <div class="absolute -bottom-6 left-0 w-full text-center text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                    CLICK TO START/PAUSE
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex gap-6 mb-12 god-hidden">
+                <button onclick="window.app.setMode('focus')" class="px-6 py-2 border border-white/10 hover:border-[var(--theme-color)] text-gray-400 hover:text-[var(--theme-color)] transition-all uppercase text-sm tracking-wider">
+                    Focus
+                </button>
+                <button onclick="window.app.setMode('short')" class="px-6 py-2 border border-white/10 hover:border-[var(--theme-color)] text-gray-400 hover:text-[var(--theme-color)] transition-all uppercase text-sm tracking-wider">
+                    Short Break
+                </button>
+                <button onclick="window.app.setMode('long')" class="px-6 py-2 border border-white/10 hover:border-[var(--theme-color)] text-gray-400 hover:text-[var(--theme-color)] transition-all uppercase text-sm tracking-wider">
+                    Long Break
+                </button>
+            </div>
+
+            <!-- God Mode Toggle -->
+            <button id="god-mode-btn" onclick="window.app.toggleGodMode()" class="flex items-center gap-2 text-gray-500 hover:text-white transition-colors text-sm tracking-widest mb-8">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                ENTER GOD MODE
+            </button>
+        </div>
+
+        <!-- Utility Bar (Tasks & Audio) -->
+        <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 god-hidden">
+            
+            <!-- Task List -->
+            <div class="glass-panel p-6 rounded-xl max-h-[500px] flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-gray-300">MISSION LOG</h3>
+                    <span id="task-count" class="text-xs bg-white/10 px-2 py-1 rounded">0</span>
+                </div>
+                
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="task-input" placeholder="What needs to be done?" 
+                        class="w-full bg-transparent border-b border-white/20 py-2 focus:outline-none focus:border-[var(--theme-color)] transition-colors text-sm"
+                        onkeypress="if(event.key === 'Enter') window.app.addTask()">
+                    <button onclick="window.app.addTask()" class="theme-text font-bold hover:text-white transition-colors">+</button>
+                </div>
+
+                <ul id="task-list" class="space-y-4 overflow-y-auto flex-1 pr-2">
+                    <!-- Tasks go here -->
+                </ul>
+            </div>
+
+            <!-- Audio & Spotify -->
+            <div class="glass-panel p-6 rounded-xl flex flex-col justify-between h-[300px] md:h-auto">
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-300 mb-4">AUDIO ENVIRONMENT</h3>
+                    
+                    <!-- Brown Noise Generator -->
+                    <div class="flex items-center justify-between mb-4 bg-white/5 p-3 rounded">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
+                            <span class="text-sm">Brown Noise (Deep Focus)</span>
+                        </div>
+                        <button id="noise-btn" onclick="window.app.toggleNoise()" class="text-xs border border-white/20 px-3 py-1 rounded hover:bg-white hover:text-black transition-all">
+                            PLAY
+                        </button>
+                    </div>
+                    
+                    <!-- Volume -->
+                     <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5" 
+                        class="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[var(--theme-color)]">
+                </div>
+
+                <!-- Spotify Embed -->
+                <div class="mt-auto pt-4 border-t border-white/10">
+                     <iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/37i9dQZF1DWZeKCadgRdKQ?utm_source=generator&theme=0" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- AUTH MODAL -->
+    <div id="auth-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/90 backdrop-blur-md">
+        <div class="glass-panel p-8 rounded-xl w-full max-w-md relative border border-green-500/20">
+            <button id="close-auth-btn" class="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
+            
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold tracking-widest text-white">IDENTITY LINK</h2>
+                <p class="text-xs theme-text mt-1 uppercase tracking-wider">Secure Connection</p>
+            </div>
+
+            <!-- Toggle Tabs -->
+            <div class="flex border-b border-white/10 mb-6">
+                <button id="tab-login" class="flex-1 pb-2 text-sm font-bold theme-text border-b-2 theme-border transition-colors">LOGIN</button>
+                <button id="tab-signup" class="flex-1 pb-2 text-sm font-bold text-gray-500 hover:text-white transition-colors">CREATE ACCOUNT</button>
+            </div>
+
+            <!-- Auth Form -->
+            <form id="auth-form" class="space-y-6">
+                <div>
+                    <label class="text-xs text-gray-400 uppercase tracking-wider">Email Frequency</label>
+                    <input type="email" id="email-input" class="minimal-input" placeholder="operative@lockedin.os" required>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-400 uppercase tracking-wider">Passcode</label>
+                    <input type="password" id="password-input" class="minimal-input" placeholder="••••••••" required>
+                </div>
+                <div id="auth-error" class="text-red-500 text-xs hidden"></div>
+                
+                <button type="submit" class="w-full py-3 theme-bg hover:opacity-90 text-black font-bold tracking-widest uppercase transition-all">
+                    <span id="submit-btn-text">Access System</span>
+                </button>
+            </form>
+
+            <div id="user-info" class="hidden text-center space-y-4">
+                <p class="text-gray-300">Logged in as: <span id="user-email-display" class="text-white font-bold"></span></p>
+                <div class="text-xs text-gray-500">Syncing data to secure cloud storage.</div>
+                <button id="logout-btn" class="w-full py-2 border border-red-500/30 text-red-500 hover:bg-red-500/10 hover:text-white text-xs uppercase tracking-wider transition-all">
+                    LOGOUT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Overlay for God Mode Exit -->
+    <div id="god-mode-exit" class="fixed bottom-8 left-1/2 -translate-x-1/2 text-white/20 text-xs uppercase tracking-widest hidden">
+        Press ESC to exit
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, query, onSnapshot, orderBy, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- APP CONFIGURATION ---
+        const userProvidedConfig = {
+            apiKey: "AIzaSyDBssSj3ithiHiutM-O4XMntrDifBDnB7Y",
+            authDomain: "lockedin-672ea.firebaseapp.com",
+            projectId: "lockedin-672ea",
+            storageBucket: "lockedin-672ea.firebasestorage.app",
+            messagingSenderId: "892646593238",
+            appId: "1:892646593238:web:59beea7509a2e4042cef77",
+            measurementId: "G-FG93ZWM8D6"
+        };
+
+        const firebaseConfig = userProvidedConfig;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        let auth, db, currentUser = null;
+        let useLocalStorage = true; 
+
+        if (firebaseConfig) {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                useLocalStorage = false;
+                console.log("LOCKED IN: Cloud Systems Online");
+            } catch (e) {
+                console.warn("LOCKED IN: Cloud Connection Failed.", e);
+                useLocalStorage = true;
+            }
+        }
+
+        // --- CORE APP LOGIC ---
+        class LockedInApp {
+            constructor() {
+                this.timerInterval = null;
+                this.secondsLeft = 25 * 60;
+                this.isRunning = false;
+                this.isGodMode = false;
+                this.audioCtx = null;
+                this.noiseNode = null;
+                this.gainNode = null;
+                this.isNoisePlaying = false;
+                this.tasks = [];
+                this.unsubscribeTasks = null;
+                
+                // Stats & Themes
+                this.currentTheme = 'green';
+                this.stats = { xp: 0, tasksCompleted: 0, streak: 0, lastLogin: null };
+
+                // Safety: Ensure DOM is ready before caching
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => this.init());
+                } else {
+                    this.init();
+                }
+            }
+
+            init() {
+                this.cacheDOM();
+                this.bindEvents();
+                this.loadTasks();
+                this.loadLocalSettings();
+            }
+            
+            loadTasks() {
+                this.loadTasksFromLocal();
+            }
+
+            cacheDOM() {
+                this.timerEl = document.getElementById('timer');
+                this.statusEl = document.getElementById('status-indicator');
+                this.taskInput = document.getElementById('task-input');
+                this.taskListEl = document.getElementById('task-list');
+                this.activeTaskText = document.getElementById('active-task-text');
+                this.taskCountEl = document.getElementById('task-count');
+                this.godModeBtn = document.getElementById('god-mode-btn');
+                this.authModal = document.getElementById('auth-modal');
+                this.authForm = document.getElementById('auth-form');
+                this.authBtn = document.getElementById('auth-btn');
+                this.settingsBtn = document.getElementById('settings-btn');
+                this.settingsPanel = document.getElementById('settings-panel');
+                this.settingsOverlay = document.getElementById('settings-overlay');
+            }
+
+            bindEvents() {
+                if (!this.timerEl) return; // Safety check
+
+                const timerBlock = document.getElementById('timer-block');
+                if (timerBlock) timerBlock.addEventListener('click', () => this.toggleTimer());
+                
+                const volSlider = document.getElementById('volume-slider');
+                if (volSlider) volSlider.addEventListener('input', (e) => this.setVolume(e.target.value));
+                
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.isGodMode) this.toggleGodMode();
+                });
+
+                if (this.authBtn) this.authBtn.addEventListener('click', () => this.toggleAuthModal(true));
+                
+                const closeAuth = document.getElementById('close-auth-btn');
+                if (closeAuth) closeAuth.addEventListener('click', () => this.toggleAuthModal(false));
+                
+                // Settings
+                if (this.settingsBtn) this.settingsBtn.addEventListener('click', () => this.toggleSettings(true));
+                
+                const closeSettings = document.getElementById('close-settings-btn');
+                if (closeSettings) closeSettings.addEventListener('click', () => this.toggleSettings(false));
+                
+                if (this.settingsOverlay) this.settingsOverlay.addEventListener('click', () => this.toggleSettings(false));
+
+                const tabLogin = document.getElementById('tab-login');
+                const tabSignup = document.getElementById('tab-signup');
+                let isLoginMode = true;
+
+                if (tabLogin) tabLogin.addEventListener('click', () => {
+                    isLoginMode = true;
+                    tabLogin.classList.add('theme-text', 'border-b-2', 'theme-border');
+                    tabLogin.classList.remove('text-gray-500');
+                    tabSignup.classList.remove('theme-text', 'border-b-2', 'theme-border');
+                    tabSignup.classList.add('text-gray-500');
+                    document.getElementById('submit-btn-text').textContent = "Access System";
+                });
+
+                if (tabSignup) tabSignup.addEventListener('click', () => {
+                    isLoginMode = false;
+                    tabSignup.classList.add('theme-text', 'border-b-2', 'theme-border');
+                    tabSignup.classList.remove('text-gray-500');
+                    tabLogin.classList.remove('theme-text', 'border-b-2', 'theme-border');
+                    tabLogin.classList.add('text-gray-500');
+                    document.getElementById('submit-btn-text').textContent = "Initialize Identity";
+                });
+
+                if (this.authForm) this.authForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('email-input').value;
+                    const password = document.getElementById('password-input').value;
+                    const errorEl = document.getElementById('auth-error');
+                    errorEl.classList.add('hidden');
+
+                    if (useLocalStorage) {
+                        errorEl.textContent = "Offline Mode: Cannot create cloud account.";
+                        errorEl.classList.remove('hidden');
+                        return;
+                    }
+
+                    try {
+                        if (isLoginMode) {
+                            await signInWithEmailAndPassword(auth, email, password);
+                        } else {
+                            await createUserWithEmailAndPassword(auth, email, password);
+                        }
+                        this.toggleAuthModal(false);
+                    } catch (error) {
+                        errorEl.textContent = error.message.replace('Firebase: ', '');
+                        errorEl.classList.remove('hidden');
+                    }
+                });
+
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) logoutBtn.addEventListener('click', () => {
+                    if(auth) signOut(auth);
+                });
+            }
+
+            // --- THEME & SETTINGS ---
+            toggleSettings(show) {
+                if(show) {
+                    this.settingsPanel.classList.remove('translate-x-full');
+                    this.settingsOverlay.classList.remove('hidden');
+                } else {
+                    this.settingsPanel.classList.add('translate-x-full');
+                    this.settingsOverlay.classList.add('hidden');
+                }
+            }
+
+            setTheme(themeName) {
+                this.currentTheme = themeName;
+                const root = document.documentElement;
+                let color, rgb;
+                
+                switch(themeName) {
+                    case 'red': color = '#ff003c'; rgb = '255, 0, 60'; break;
+                    case 'blue': color = '#00f3ff'; rgb = '0, 243, 255'; break;
+                    case 'white': color = '#ffffff'; rgb = '255, 255, 255'; break;
+                    default: color = '#00ff41'; rgb = '0, 255, 65'; break; // green
+                }
+
+                root.style.setProperty('--theme-color', color);
+                root.style.setProperty('--theme-rgb', rgb);
+                
+                localStorage.setItem('lockedin_theme', themeName);
+                
+                if(currentUser && db) {
+                    setDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/settings`, 'preferences'), { theme: themeName }, { merge: true });
+                }
+            }
+
+            loadLocalSettings() {
+                const theme = localStorage.getItem('lockedin_theme') || 'green';
+                this.setTheme(theme);
+                const savedStats = localStorage.getItem('lockedin_stats');
+                if(savedStats) this.stats = JSON.parse(savedStats);
+                this.updateStatsUI();
+                this.checkStreak(); 
+            }
+
+            // --- STATS & STREAK ---
+            checkStreak() {
+                const today = new Date().toDateString();
+                if (this.stats.lastLogin !== today) {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    
+                    if (this.stats.lastLogin === yesterday.toDateString()) {
+                        this.stats.streak++;
+                    } else {
+                        this.stats.streak = 1; 
+                    }
+                    
+                    this.stats.lastLogin = today;
+                    this.saveStats();
+                }
+                this.updateStatsUI();
+            }
+
+            addXP(amount) {
+                this.stats.xp += amount;
+                this.stats.tasksCompleted++;
+                this.saveStats();
+                this.updateStatsUI();
+            }
+
+            updateStatsUI() {
+                const streakEl = document.getElementById('streak-count');
+                if (streakEl) streakEl.textContent = this.stats.streak;
+                
+                const xpEl = document.getElementById('total-xp');
+                if (xpEl) xpEl.textContent = this.stats.xp;
+                
+                const tasksEl = document.getElementById('total-tasks');
+                if (tasksEl) tasksEl.textContent = this.stats.tasksCompleted;
+                
+                const level = Math.floor(this.stats.xp / 100) + 1;
+                const progress = this.stats.xp % 100;
+                
+                const lvlEl = document.getElementById('level-count');
+                if (lvlEl) lvlEl.textContent = level;
+                
+                const xpBar = document.getElementById('xp-bar');
+                if (xpBar) xpBar.style.width = `${progress}%`;
+            }
+
+            saveStats() {
+                localStorage.setItem('lockedin_stats', JSON.stringify(this.stats));
+                if(currentUser && db) {
+                     setDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/settings`, 'stats'), this.stats, { merge: true });
+                }
+            }
+
+            async syncCloudStats() {
+                if(!currentUser || !db) return;
+                const docRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/settings`, 'stats');
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    this.stats = docSnap.data();
+                    this.checkStreak(); 
+                }
+                
+                const prefRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/settings`, 'preferences');
+                const prefSnap = await getDoc(prefRef);
+                if(prefSnap.exists() && prefSnap.data().theme) {
+                    this.setTheme(prefSnap.data().theme);
+                }
+            }
+
+            // --- AUTH STATE HANDLING ---
+            handleAuthState(user) {
+                currentUser = user;
+                const authStatusText = document.getElementById('auth-status-text');
+                const userInfoDiv = document.getElementById('user-info');
+                const authForm = document.getElementById('auth-form');
+                const authBtnIcon = document.getElementById('auth-icon-container');
+
+                if (!authStatusText) return; // Safety
+
+                if (user) {
+                    authStatusText.textContent = user.email;
+                    authStatusText.classList.add('theme-text', 'font-bold');
+                    authStatusText.classList.remove('text-gray-500');
+                    
+                    if(authBtnIcon) {
+                        authBtnIcon.classList.add('theme-border', 'theme-text', 'bg-white/10');
+                        authBtnIcon.classList.remove('border-white/10', 'bg-white/5');
+                    }
+
+                    const userEmailDisplay = document.getElementById('user-email-display');
+                    if (userEmailDisplay) userEmailDisplay.textContent = user.email;
+                    
+                    if (userInfoDiv) userInfoDiv.classList.remove('hidden');
+                    if (authForm) authForm.classList.add('hidden');
+                    
+                    this.setupFirestoreListener();
+                    this.syncCloudStats(); 
+                } else {
+                    authStatusText.textContent = "SIGN IN";
+                    authStatusText.classList.remove('theme-text', 'font-bold');
+                    authStatusText.classList.add('text-gray-500');
+                    
+                    if(authBtnIcon) {
+                        authBtnIcon.classList.remove('theme-border', 'theme-text', 'bg-white/10');
+                        authBtnIcon.classList.add('border-white/10', 'bg-white/5');
+                    }
+
+                    if (userInfoDiv) userInfoDiv.classList.add('hidden');
+                    if (authForm) authForm.classList.remove('hidden');
+                    if (this.unsubscribeTasks) this.unsubscribeTasks();
+                    this.loadTasksFromLocal();
+                }
+            }
+
+            toggleAuthModal(show) {
+                if (show) this.authModal.classList.remove('hidden');
+                else this.authModal.classList.add('hidden');
+            }
+
+            // --- TASK MANAGEMENT ---
+            setupFirestoreListener() {
+                if (!currentUser || !db) return;
+                const q = query(collection(db, `artifacts/${appId}/users/${currentUser.uid}/tasks`), orderBy('createdAt'));
+                
+                this.unsubscribeTasks = onSnapshot(q, (snapshot) => {
+                    this.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    this.renderTasks();
+                });
+            }
+
+            loadTasksFromLocal() {
+                const saved = localStorage.getItem('lockedin_tasks');
+                this.tasks = saved ? JSON.parse(saved) : [];
+                this.renderTasks();
+            }
+
+            async addTask() {
+                if (!this.taskInput) return;
+                const text = this.taskInput.value.trim();
+                if (!text) return;
+                const newTask = { text, createdAt: Date.now(), subtasks: [] };
+                
+                if (currentUser && db) {
+                    await addDoc(collection(db, `artifacts/${appId}/users/${currentUser.uid}/tasks`), newTask);
+                } else {
+                    newTask.id = Date.now().toString();
+                    this.tasks.push(newTask);
+                    this.saveLocal();
+                    this.renderTasks();
+                }
+                this.taskInput.value = '';
+            }
+
+            async removeTask(taskIdOrIndex) {
+                if (currentUser && db && typeof taskIdOrIndex === 'string') {
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/tasks`, taskIdOrIndex));
+                } else {
+                    if (typeof taskIdOrIndex === 'string') {
+                         this.tasks = this.tasks.filter(t => t.id !== taskIdOrIndex);
+                    } else {
+                         this.tasks.splice(taskIdOrIndex, 1);
+                    }
+                    this.saveLocal();
+                    this.renderTasks();
+                }
+            }
+            
+            // --- SUBTASK MANAGEMENT ---
+            async addSubtask(taskId, subtext) {
+                if (!subtext) return;
+                const task = this.tasks.find(t => t.id === taskId);
+                if (!task) return;
+                
+                const newSub = { text: subtext, completed: false };
+                if (!task.subtasks) task.subtasks = [];
+                task.subtasks.push(newSub);
+
+                if (currentUser && db) {
+                    await updateDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/tasks`, taskId), { subtasks: task.subtasks });
+                } else {
+                    this.saveLocal();
+                    this.renderTasks();
+                }
+            }
+
+            async toggleSubtask(taskId, subIndex) {
+                const task = this.tasks.find(t => t.id === taskId);
+                if (!task || !task.subtasks) return;
+                
+                const wasCompleted = task.subtasks[subIndex].completed;
+                task.subtasks[subIndex].completed = !wasCompleted;
+                
+                // Award XP if completing a subtask
+                if (!wasCompleted) this.addXP(10); 
+
+                if (currentUser && db) {
+                    await updateDoc(doc(db, `artifacts/${appId}/users/${currentUser.uid}/tasks`, taskId), { subtasks: task.subtasks });
+                } else {
+                    this.saveLocal();
+                    this.renderTasks();
+                }
+            }
+
+            saveLocal() {
+                localStorage.setItem('lockedin_tasks', JSON.stringify(this.tasks));
+            }
+
+            renderTasks() {
+                if (!this.taskListEl) return;
+                this.taskListEl.innerHTML = '';
+                if (this.taskCountEl) this.taskCountEl.textContent = this.tasks.length;
+                
+                if (this.tasks.length === 0) {
+                    if (this.activeTaskText) this.activeTaskText.textContent = "Initialize mission...";
+                    return;
+                }
+                
+                if (this.activeTaskText) this.activeTaskText.textContent = this.tasks[0].text;
+
+                this.tasks.forEach((task, index) => {
+                    const taskId = task.id || index;
+                    const deleteParam = (currentUser && task.id) ? `'${task.id}'` : (task.id ? `'${task.id}'` : index);
+                    
+                    const subtasks = task.subtasks || [];
+                    const totalSub = subtasks.length;
+                    const completedSub = subtasks.filter(s => s.completed).length;
+                    const progress = totalSub === 0 ? 0 : (completedSub / totalSub) * 100;
+
+                    const li = document.createElement('li');
+                    li.className = "group p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-all";
+                    
+                    let subtasksHtml = '';
+                    if (subtasks.length > 0) {
+                        subtasksHtml = `<div class="mt-3 space-y-1 pl-2 border-l border-white/10">
+                            ${subtasks.map((sub, sIdx) => `
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" ${sub.completed ? 'checked' : ''} 
+                                        onclick="window.app.toggleSubtask('${taskId}', ${sIdx})" 
+                                        class="custom-checkbox rounded-sm">
+                                    <span class="text-xs ${sub.completed ? 'theme-text line-through' : 'text-gray-400'}">${sub.text}</span>
+                                </div>
+                            `).join('')}
+                        </div>`;
+                    }
+
+                    // Progress bar HTML - Now uses theme colors
+                    const progressHtml = totalSub > 0 ? `
+                        <div class="w-full bg-gray-800 h-1 mt-2 rounded overflow-hidden">
+                            <div class="theme-bg h-full transition-all duration-300" style="width: ${progress}%"></div>
+                        </div>
+                        <div class="text-[10px] theme-text mt-1 text-right">${Math.round(progress)}% COMPLETE</div>
+                    ` : '';
+
+                    li.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <span onclick="window.app.setActiveTask('${task.text}')" class="flex-grow text-gray-200 hover:text-[var(--theme-color)] font-bold cursor-pointer transition-colors">${task.text}</span>
+                            <button onclick="window.app.removeTask(${deleteParam})" class="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-xs uppercase ml-2">Delete</button>
+                        </div>
+                        ${progressHtml}
+                        ${subtasksHtml}
+                        <div class="mt-3 flex gap-2">
+                            <input type="text" placeholder="+ Add step" class="bg-transparent border-b border-white/10 text-xs text-gray-400 w-full py-1 focus:outline-none focus:border-[var(--theme-color)]"
+                                onkeypress="if(event.key === 'Enter') { window.app.addSubtask('${taskId}', this.value); this.value=''; }">
+                        </div>
+                    `;
+                    this.taskListEl.appendChild(li);
+                });
+            }
+
+            setActiveTask(text) {
+                if (this.activeTaskText) this.activeTaskText.textContent = text;
+            }
+
+            // --- TIMER LOGIC ---
+            updateTimerDisplay() {
+                if (!this.timerEl) return;
+                const m = Math.floor(this.secondsLeft / 60).toString().padStart(2, '0');
+                const s = (this.secondsLeft % 60).toString().padStart(2, '0');
+                this.timerEl.textContent = `${m}:${s}`;
+                document.title = `${m}:${s} - LOCKED IN`;
+            }
+
+            toggleTimer() {
+                if (this.isRunning) {
+                    clearInterval(this.timerInterval);
+                    this.isRunning = false;
+                    // SAFEGUARDS
+                    if (this.statusEl) {
+                        this.statusEl.textContent = "PAUSED";
+                        this.statusEl.classList.remove('theme-text');
+                    }
+                    if (this.timerEl) this.timerEl.classList.remove('theme-text');
+                } else {
+                    this.isRunning = true;
+                    // SAFEGUARDS
+                    if (this.statusEl) {
+                        this.statusEl.textContent = "RUNNING";
+                        this.statusEl.classList.add('theme-text');
+                    }
+                    if (this.timerEl) this.timerEl.classList.add('theme-text');
+                    
+                    this.timerInterval = setInterval(() => {
+                        if (this.secondsLeft > 0) {
+                            this.secondsLeft--;
+                            this.updateTimerDisplay();
+                        } else {
+                            clearInterval(this.timerInterval);
+                            this.isRunning = false;
+                            this.playEndSound(); // Play pleasant chime
+                            this.addXP(50); 
+                            
+                            // SAFEGUARDS
+                            if (this.statusEl) {
+                                this.statusEl.textContent = "COMPLETED";
+                                this.statusEl.classList.remove('theme-text');
+                            }
+                            if (this.timerEl) this.timerEl.classList.remove('theme-text');
+                        }
+                    }, 1000);
+                }
+            }
+
+            setMode(mode) {
+                clearInterval(this.timerInterval);
+                this.isRunning = false;
+                // SAFEGUARDS
+                if (this.statusEl) {
+                    this.statusEl.textContent = "READY";
+                    this.statusEl.classList.remove('theme-text');
+                }
+                if (this.timerEl) this.timerEl.classList.remove('theme-text');
+                
+                if (mode === 'focus') this.secondsLeft = 25 * 60;
+                if (mode === 'short') this.secondsLeft = 5 * 60;
+                if (mode === 'long') this.secondsLeft = 15 * 60;
+                this.updateTimerDisplay();
+            }
+
+            initAudio() {
+                if (this.audioCtx) return;
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.audioCtx = new AudioContext();
+                const bufferSize = this.audioCtx.sampleRate * 2;
+                const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                let lastOut = 0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    lastOut = (lastOut + (0.02 * white)) / 1.02;
+                    data[i] = lastOut * 3.5;
+                    lastOut *= 3.5; 
+                }
+                this.noiseNode = this.audioCtx.createBufferSource();
+                this.noiseNode.buffer = buffer;
+                this.noiseNode.loop = true;
+                this.gainNode = this.audioCtx.createGain();
+                this.gainNode.gain.value = 0.1;
+                this.noiseNode.connect(this.gainNode);
+                this.gainNode.connect(this.audioCtx.destination);
+                this.noiseNode.start();
+                this.audioCtx.suspend();
+            }
+
+            async toggleNoise() {
+                const btn = document.getElementById('noise-btn');
+                if (!this.audioCtx) this.initAudio();
+                if (this.audioCtx.state === 'suspended') {
+                    await this.audioCtx.resume();
+                    btn.textContent = "STOP";
+                    btn.classList.add('bg-white', 'text-black');
+                } else {
+                    await this.audioCtx.suspend();
+                    btn.textContent = "PLAY";
+                    btn.classList.remove('bg-white', 'text-black');
+                }
+            }
+            
+            setVolume(val) {
+                if(this.gainNode) this.gainNode.gain.value = val * 0.5;
+            }
+
+            // NEW: Better End Sound (Chime)
+            playEndSound() {
+                if(!this.audioCtx) this.initAudio();
+                const now = this.audioCtx.currentTime;
+                
+                const playTone = (freq, startTime, duration) => {
+                    const osc = this.audioCtx.createOscillator();
+                    const gain = this.audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.audioCtx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.1, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                    osc.start(startTime);
+                    osc.stop(startTime + duration);
+                };
+
+                // Success chime (C Major Arpeggio)
+                playTone(523.25, now, 0.5);       // C5
+                playTone(659.25, now + 0.1, 0.5); // E5
+                playTone(783.99, now + 0.2, 0.5); // G5
+                playTone(1046.50, now + 0.4, 0.8); // C6
+            }
+
+            toggleGodMode() {
+                const body = document.body;
+                const exitMsg = document.getElementById('god-mode-exit');
+                this.isGodMode = !this.isGodMode;
+                if (this.isGodMode) {
+                    body.classList.add('god-mode');
+                    this.godModeBtn.innerHTML = "PRESS ESC TO EXIT";
+                    exitMsg.classList.remove('hidden');
+                    if (!this.isRunning) this.toggleTimer();
+                    if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(e => console.log(e));
+                } else {
+                    body.classList.remove('god-mode');
+                    this.godModeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg> ENTER GOD MODE`;
+                    exitMsg.classList.add('hidden');
+                    if (document.exitFullscreen) document.exitFullscreen().catch(e => console.log(e));
+                }
+            }
+        }
+
+        window.app = new LockedInApp();
+        if (auth) {
+            onAuthStateChanged(auth, (user) => window.app.handleAuthState(user));
+        }
+    </script>
+</body>
+</html>
